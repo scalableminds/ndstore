@@ -1264,7 +1264,7 @@ class EMCADB:
 
     return dict(self.cursor.fetchall())
 
-  def mergeglobal(self, ids, mergetype, res):
+  def mergeGlobal(self, ids, mergetype, res):
 
     resolution = int(res)
     # ID to merge annotations into 

@@ -588,7 +588,6 @@ def annopost ( webargs, postdata ):
   """Interface to the annotation write service 
       Load the annotation project and invoke the appropriate
       dataset."""
-  import pdb;pdb.set_trace();
   [ token, sym, rangeargs ] = webargs.partition ('/')
   [ db, proj, projdb ] = loadDBProj ( token )
   return selectPost ( rangeargs, proj, db, postdata )
@@ -1442,26 +1441,27 @@ def loadDBProj ( token ):
 
 
 def merge ( webargs ):
-  """Return a single HDF5 field"""
+  """ Merge a list of IDS"""
+  # Expecting url in the form: token/
 
   try:
     [token, service, relabelids, rest] = webargs.split ('/',3)
   except:
-    logger.warning("Illegal globalMerge request.  Wrong number of arguments.")
-    raise EMCAError("Illegal globalMerber request.  Wrong number of arguments.")
+    logger.warning("Illegal Merge request.  Wrong number of arguments.")
+    raise EMCAError("Illegal Merbe request.  Wrong number of arguments.")
+  [ db, proj, projdb ] = loadDBProj ( token )
   
   # get the ids from the list of ids and store it in a list vairable
   ids = relabelids.split(',')
   last_id = len(ids)-1
   ids[last_id] = ids[last_id].replace("/","")
-  
   # Make ids a numpy array to speed vectorize
   ids = np.array(ids,dtype=np.uint32)
 
-  [ db, proj, projdb ] = loadDBProj ( token )
-  import pdb;pdb.set_trace()
-  #mergetype = rest
+  # Deal with resolution: This is an opeitonal field. If it is not specified
+
   [mergetype,resolution] = rest.split('/',1)
+  import pdb;pdb.set_trace()
   if mergetype == "global":
     if resolution != '':
       [resolution,extra] = resolution.split('/')
