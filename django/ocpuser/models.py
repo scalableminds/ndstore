@@ -4,21 +4,28 @@ from django.contrib.auth.models import User
 
 # This model represent and creates an ocp dataset( database)
 class datasets ( models.Model):
-    dataset  =  models. CharField(max_length=200, primary_key=True,verbose_name="Name of the Image dataset")    
+    dataset  =  models. CharField(max_length=200, unique=True,verbose_name="Name of the Image dataset")    
     ximagesize =  models.IntegerField()
     yimagesize =  models.IntegerField()
     startslice = models.IntegerField()
     endslice = models.IntegerField()
     zoomlevels = models.IntegerField()
     zscale = models.FloatField()
-    dataset_description  =  models. CharField(max_length=4096,blank=True)
+    dataset_description  =  models. CharField(max_length=4096)
     
     class Meta:
         """ Meta """
         # Required to override the default table name
         db_table = u"datasets"
+        managed = True
+        permissions = (
+            ("can_administer", "Can administer projects"),
+            ("can_delete", "Can delete projects"),
+            ("can_browse", "Can browse projects")
+        )
+
     def __unicode__(self):
-        return self.name
+        return self.dataset
 
 
 # This model represent and creates an ocp project( database)
@@ -64,7 +71,7 @@ class projects ( models.Model):
         # Required to override the default table name
         db_table = u"projects"
     def __unicode__(self):
-        return self.name
+        return self.project
 
 
 class tokens ( models.Model):
@@ -88,4 +95,4 @@ class tokens ( models.Model):
          # Required to override the default table name
         db_table = u"tokens"
     def __unicode__(self):
-        return self.name
+        return self.token

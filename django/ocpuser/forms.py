@@ -1,14 +1,17 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.forms import ModelForm
-from models import ocpProject
-from models import ocpDataset
+from models import projects
+from models import datasets
+from models import tokens
 
 
 class CreateProjectForm(ModelForm):
 
     class Meta:
-        model = ocpProject
+        model = projects
+
+
         def clean_project(self):
             if 'project' in self.cleaned_data:
                 project = self.cleaned_data['project']
@@ -18,7 +21,8 @@ class CreateProjectForm(ModelForm):
 class CreateDatasetForm(ModelForm):
 
     class Meta:
-        model = ocpDataset
+        model = datasets
+
              
 class UpdateProjectForm(forms.Form):
     currentToken = forms.CharField(label=(u' Current Token'), widget = forms.TextInput(attrs={'readonly':'readonly'}))

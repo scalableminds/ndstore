@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render_to_response
 from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404 
 from django.template import RequestContext
 from django.contrib.auth import authenticate, login, logout
 from django.core.urlresolvers import get_script_prefix
@@ -16,11 +17,15 @@ import ocpcarest
 import ocpcaproj
 import string
 import random
-from models import ocpProject
-from models import ocpDataset
+
+from models import projects
+from models import datasets
+from models import tokens
+
 from forms import CreateProjectForm
 from forms import CreateDatasetForm
 from forms import UpdateProjectForm
+
 from django.core.urlresolvers import get_script_prefix
 import os
 import subprocess
@@ -159,47 +164,7 @@ def profile(request):
     return render_to_response('profile.html', { 'projs': projects, 'databases': dbs.iteritems() },context_instance=RequestContext(request))
     
 
-@login_required
-def datasets(request):
-  
-  try:
-    pd = ocpcaproj.OCPCAProjectsDB()
-   
-    if request.method == 'POST':
-      if 'delete' in request.POST:
-        pd = ocpcaproj.OCPCAProjectsDB()
-        openid = request.user.username
-        ds = (request.POST.get('dataset')).strip()
-        pd.deleteDataset(ds)
-        #pd.deleteTokenDescription(token)
-        pd = ocpcaproj.OCPCAProjectsDB()
-        datasets = pd.getDatasets()
-        return render_to_response('datasets.html', { 'dts': datasets },context_instance=RequestContext(request))
-      elif 'viewprojects' in request.POST:
-        pd = ocpcaproj.OCPCAProjectsDB()
-        openid = request.user.username
-        ds = (request.POST.get('dataset')).strip()
-        request.session["project"] = ds
-        filteroption= ""
-        filtervalue = ""
-        dbs = defaultdict(list)
-        proj = pd.getFilteredProjs(openid,filteroption,filtervalue,ds);
-        dbs[ds].append(proj)
-        return redirect(profile)
-        #return render_to_response('profile.html', { 'projs': proj, 'databases':  dbs },context_instance=RequestContext(request))
-      else:
-        datasets = pd.getDatasets()
-        return render_to_response('datasets.html', { 'dts': datasets },context_instance=RequestContext(request))
-    else:
-      # GET datasets
-      pd = ocpcaproj.OCPCAProjectsDB()
-      datasets = pd.getDatasets()
-      return render_to_response('datasets.html', { 'dts': datasets },context_instance=RequestContext(request))
-  except OCPCAError, e:
-    #return django.http.HttpResponseNotFound(e.value)
-    datasets = pd.getDatasets()    
-    messages.error(request, e.value)
-    return render_to_response('datasets.html', { 'dts': datasets },context_instance=RequestContext(request))    
+
 
 
   #return render_to_response('datasets.html')
@@ -317,45 +282,6 @@ def createproject(request):
     context = {'form': form}
     return render_to_response('createproject.html',context,context_instance=RequestContext(request))
       
-@login_required
-def createdataset(request):
-
-  if request.method == 'POST':
-    if 'createdataset' in request.POST:
-      form = CreateDatasetForm(request.POST)
-      if form.is_valid():
-        dataset = form.cleaned_data['dataset']
-
-        description = form.cleaned_data['description']
-        ximagesize = form.cleaned_data['ximagesize']
-        yimagesize = form.cleaned_data['yimagesize']
-        startslice = form.cleaned_data['startslice']
-        endslice = form.cleaned_data['endslice']
-        zoomlevels = form.cleaned_data['zoomlevels']
-        zscale = form.cleaned_data['zscale']
-
-        print "Creating a dataset with:"
-        print dataset, ximagesize, yimagesize, startslice,endslice,zoomlevels,zscale
-        # Get database info                                                                      
-        pd = ocpcaproj.OCPCAProjectsDB()
-        pd.newDataset ( dataset, ximagesize, yimagesize, startslice, endslice, zoomlevels, zscale )        
-#pd.newOCPCAProj ( token, openid, host, project, datatype, dataset, dataurl, readonly, exceptions , nocreate )
-        #pd.insertTokenDescription ( token, description )
-        return redirect(datasets)
-
-      else:
-        context = {'form': form}
-        print form.errors
-        return render_to_response('createdataset.html',context,context_instance=RequestContext(request))
-    else:
-      #default                                                                                                                                           
-      return redirect(datasets)
-  else:
-    '''Show the Create datasets form'''
-    
-    form = CreateDatasetForm()
-    context = {'form': form}
-    return render_to_response('createdataset.html',context,context_instance=RequestContext(request))
 
 @login_required
 def updateproject(request):
@@ -457,3 +383,114 @@ def restore(request):
       file_list={}
     context = Context({'form': form, 'flist': file_list})
     return render_to_response('restoreproject.html',context,context_instance=RequestContext(request))
+
+
+@login_required
+def get_datasets(request):
+  try:
+    pd = ocpcaproj.OCPCAProjectsDB()
+   
+    if request.method == 'POST':
+      if 'delete' in request.POST:
+        #delete specified dataset
+        ds = (request.POST.get('dataset')).strip()
+        ds_to_delete = datasets.objects.get(dataset=ds)
+        ds_to_delete.delete()
+        all_datasets = datasets.objects.all()
+        return render_to_response('datasets.html', { 'dts': all_datasets },context_instance=RequestContext(request))
+      elif 'update' in request.POST:
+        ds = (request.POST.get('dataset')).strip()
+        request.session["dataset"] = ds
+        return redirect(updatedataset)
+      #elif 'viewprojects' in request.POST:
+       # pd = ocpcaproj.OCPCAProjectsDB()
+       # openid = request.user.username
+       # ds = (request.POST.get('dataset')).strip()
+       # request.session["project"] = ds
+       # filteroption= ""
+       # filtervalue = ""
+       # dbs = defaultdict(list)
+       # proj = pd.getFilteredProjs(openid,filteroption,filtervalue,ds);
+       # dbs[ds].append(proj)
+       # return redirect(profile)
+        #return render_to_response('profile.html', { 'projs': proj, 'databases':  dbs },context_instance=RequestContext(request))
+      else:
+        #Get all datasets
+        all_datasets = datasets.objects.all()
+        return render_to_response('datasets.html', { 'dts': all_datasets },context_instance=RequestContext(request))
+    else:
+      # GET datasets
+      all_datasets = datasets.objects.all()
+      return render_to_response('datasets.html', { 'dts': all_datasets },context_instance=RequestContext(request))
+  except OCPCAError, e:
+    all_datasets = datasets.objects.all()  
+    messages.error(request, e.value)
+    return render_to_response('datasets.html', { 'dts': all_datasets },context_instance=RequestContext(request))    
+
+@login_required
+def createdataset(request):
+
+  if request.method == 'POST':
+    if 'createdataset' in request.POST:
+      form = CreateDatasetForm(request.POST)
+      if form.is_valid():
+        new_project= form.save()
+        return HttpResponseRedirect(get_script_prefix()+'ocpuser/datasets')
+      #  return redirect(datasets)
+      else:
+        context = {'form': form}
+        print form.errors
+        return render_to_response('createdataset.html',context,context_instance=RequestContext(request))
+    else:
+      return redirect(datasets)
+  else:
+    '''Show the Create datasets form'''
+    form = CreateDatasetForm()
+    context = {'form': form}
+    return render_to_response('createdataset.html',context,context_instance=RequestContext(request))
+
+
+def updatedataset(request):
+  # Get the dataset to update
+  ds = request.session["dataset"]
+  ds_update = get_object_or_404(datasets,dataset=ds)
+  
+  if request.method == 'POST':
+    if 'UpdateDataset' in request.POST:
+      form = CreateDatasetForm(data= request.POST or None,instance=ds_update)
+      if form.is_valid():
+          form.save()
+          messages.success(request, 'Sucessfully updated dataset')
+          del request.session["dataset"]
+          return HttpResponseRedirect(get_script_prefix()+'ocpuser/datasets')
+      else:
+        #Invalid form
+        context = {'form': form}
+        print form.errors
+        return render_to_response('updatedataset.html',context,context_instance=RequestContext(request))
+    else:
+      #unrecognized option
+      return HttpResponseRedirect(get_script_prefix()+'ocpuser/datasets')
+          
+  else:
+    print "Getting the update form"
+    if "dataset" in request.session:
+      ds = request.session["dataset"]
+#      
+    else:
+      ds = ""
+    ds_to_update = datasets.objects.select_for_update().filter(dataset=ds)
+    data = {
+      'dataset': ds_to_update[0].dataset,
+      'ximagesize':ds_to_update[0].ximagesize,
+      'yimagesize':ds_to_update[0].yimagesize,
+      'startslice':ds_to_update[0].startslice,
+      'endslice':ds_to_update[0].endslice,
+      'zoomlevels':ds_to_update[0].zoomlevels,
+      'zscale':ds_to_update[0].zscale,
+      'dataset_description':ds_to_update[0].dataset_description,
+            }
+    form = CreateDatasetForm(initial=data)
+    context = {'form': form}
+    return render_to_response('updatedataset.html',context,context_instance=RequestContext(request))
+
