@@ -13,16 +13,18 @@ from django.core.urlresolvers import get_script_prefix
 from django.template import Context
 from collections import defaultdict
 from django.contrib import messages
+from django.forms.models import inlineformset_factory
 import ocpcarest
 import ocpcaproj
 import string
 import random
 
-from models import projects
-from models import datasets
-from models import tokens
+from models import Project
+from models import Dataset
+from models import Token
 
 from forms import CreateProjectForm
+from forms import ProjectFormSet
 from forms import CreateDatasetForm
 from forms import UpdateProjectForm
 
@@ -238,31 +240,26 @@ def createproject(request):
   if request.method == 'POST':
     if 'CreateProject' in request.POST:
       form = CreateProjectForm(request.POST)
-      #import pdb;pdb.set_trace()
+   
       if form.is_valid():
-        token = form.cleaned_data['token']
-        host = form.cleaned_data['host']
-        description = form.cleaned_data['description']
-        project = form.cleaned_data['project']
-        dataset = form.cleaned_data['dataset']
-        datatype = form.cleaned_data['datatype']
+                
+        formset = ProjectFormSet(request.POST, instance=form.cleaned_data['dataset'])
+        if formset.is_valid():
+          formset.save()
+  
         nocreateoption = request.POST.get('nocreate')
         if nocreateoption =="on":
           nocreate = 1
         else:
           nocreate = 0
-        dataurl = "http://openconnecto.me/EM"
-        readonly = form.cleaned_data['readonly']
-        exceptions = form.cleaned_data['exceptions']
-        openid = request.user.username
-        resolution =form.cleaned_data['resolution']
+        
         print "Creating a project with:"
-        print token, project, dataset, dataurl,readonly, exceptions, openid , resolution
+        print  project, dataset, dataurl, exceptions, openid , resolution
         # Get database info                
         try:
           pd = ocpcaproj.OCPCAProjectsDB()
           pd.newOCPCAProj ( token, openid, host, project, datatype, dataset, dataurl, readonly, exceptions , nocreate, int(resolution) )
-          pd.insertTokenDescription ( token, description )
+          #pd.insertTokenDescription ( token, description )
           return redirect(profile)          
         except OCPCAError, e:
           messages.error(request, e.value)
@@ -277,9 +274,14 @@ def createproject(request):
       return redirect(profile)
   else:
     '''Show the Create projects form'''
-    randtoken = ''.join(random.choice(string.ascii_uppercase + string.digits + string.ascii_lowercase) for x in range(64))
-    form = CreateProjectForm(initial={'token': randtoken})
-    context = {'form': form}
+    #randtoken = ''.join(random.choice(string.ascii_uppercase + string.digits + string.ascii_lowercase) for x in range(64))
+    #form = CreateProjectForm(initial={'token': randtoken})
+    #PYTODO - This should show both the create token form and create project form.
+    # I am starting with create project which has a foreign key dependency on datasets.
+    dataset_form = CreateDatasetForm()
+    dataset = Dataset()
+    formset = ProjectFormSet(instance=dataset)
+    context = {'formset': formset}
     return render_to_response('createproject.html',context,context_instance=RequestContext(request))
       
 
@@ -393,14 +395,14 @@ def get_datasets(request):
     if request.method == 'POST':
       if 'delete' in request.POST:
         #delete specified dataset
-        ds = (request.POST.get('dataset')).strip()
-        ds_to_delete = datasets.objects.get(dataset=ds)
+        ds = (request.POST.get('dataset_name')).strip()
+        ds_to_delete = Dataset.objects.get(dataset_name=ds)
         ds_to_delete.delete()
-        all_datasets = datasets.objects.all()
+        all_datasets = Dataset.objects.all()
         return render_to_response('datasets.html', { 'dts': all_datasets },context_instance=RequestContext(request))
       elif 'update' in request.POST:
-        ds = (request.POST.get('dataset')).strip()
-        request.session["dataset"] = ds
+        ds = (request.POST.get('dataset_name')).strip()
+        request.session["dataset_name"] = ds
         return redirect(updatedataset)
       #elif 'viewprojects' in request.POST:
        # pd = ocpcaproj.OCPCAProjectsDB()
@@ -416,14 +418,14 @@ def get_datasets(request):
         #return render_to_response('profile.html', { 'projs': proj, 'databases':  dbs },context_instance=RequestContext(request))
       else:
         #Get all datasets
-        all_datasets = datasets.objects.all()
+        all_datasets = Dataset.objects.all()
         return render_to_response('datasets.html', { 'dts': all_datasets },context_instance=RequestContext(request))
     else:
       # GET datasets
-      all_datasets = datasets.objects.all()
+      all_datasets = Dataset.objects.all()
       return render_to_response('datasets.html', { 'dts': all_datasets },context_instance=RequestContext(request))
   except OCPCAError, e:
-    all_datasets = datasets.objects.all()  
+    all_datasets = Dataset.objects.all()  
     messages.error(request, e.value)
     return render_to_response('datasets.html', { 'dts': all_datasets },context_instance=RequestContext(request))    
 
@@ -452,16 +454,16 @@ def createdataset(request):
 
 def updatedataset(request):
   # Get the dataset to update
-  ds = request.session["dataset"]
-  ds_update = get_object_or_404(datasets,dataset=ds)
-  
+  ds = request.session["dataset_name"]
+    
   if request.method == 'POST':
     if 'UpdateDataset' in request.POST:
+      ds_update = get_object_or_404(Dataset,dataset_name=ds)
       form = CreateDatasetForm(data= request.POST or None,instance=ds_update)
       if form.is_valid():
           form.save()
           messages.success(request, 'Sucessfully updated dataset')
-          del request.session["dataset"]
+          del request.session["dataset_name"]
           return HttpResponseRedirect(get_script_prefix()+'ocpuser/datasets')
       else:
         #Invalid form
@@ -474,14 +476,15 @@ def updatedataset(request):
           
   else:
     print "Getting the update form"
-    if "dataset" in request.session:
-      ds = request.session["dataset"]
+    
+    if "dataset_name" in request.session:
+      ds = request.session["dataset_name"]
 #      
     else:
       ds = ""
-    ds_to_update = datasets.objects.select_for_update().filter(dataset=ds)
+    ds_to_update = Dataset.objects.select_for_update().filter(dataset_name=ds)
     data = {
-      'dataset': ds_to_update[0].dataset,
+      'dataset_name': ds_to_update[0].dataset_name,
       'ximagesize':ds_to_update[0].ximagesize,
       'yimagesize':ds_to_update[0].yimagesize,
       'startslice':ds_to_update[0].startslice,

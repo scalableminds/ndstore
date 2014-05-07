@@ -18,62 +18,52 @@ Create Project Template
  </div>
 
 <form method="post" action="" enctype="multipart/form-data">
-   
+
+{% for form in formset.forms %}   
   {{ form.non_field_errors }}
   <div class="container-fluid">
     <div class = "row-fluid"> <div class ="span12"></div></div>
-    <div class = "row-fluid">
-      <div class ="span4"></div>
-      <div class ="span2 blue">
-        <div class="fieldWrapper">
-          {{ form.subject.errors }}
-          <label for="Token">Token:</label>
-        </div>
-      </div>
-      <div class ="span2">
-        {{ form.token }}
-      </div>
-      <div class ="span4"></div>
-    </div>
 
-    <div class = "row-fluid">
-      <div class ="span4"></div>
-      <div class ="span2">
-        <div class="fieldWrapper">
-          {{ form.subject.errors }}
-          <label for="description">Description</label>
-        </div>
-      </div>
-      <div class ="span2">
-        {{ form.description }}
-      </div>
-      <div class ="span4"></div>
-    </div>
+    
     
      <div class = "row-fluid">
        <div class ="span4"></div>
        <div class ="span2">
          <div class="fieldWrapper">
            {{ form.subject.errors }}
-           <label for="project">Project:</label>
+           <label for="project_name">Project:</label>
          </div>
        </div>
        <div class ="span2">
-         {{ form.project }}
+         {{ form.project_name }}
        </div>
        <div class ="span4"></div>
      </div>
+
+     <div class = "row-fluid">
+      <div class ="span4"></div>
+      <div class ="span2">
+        <div class="fieldWrapper">
+          {{ form.subject.errors }}
+          <label for="description">Project Description</label>
+        </div>
+      </div>
+      <div class ="span2">
+        {{ form.project_description }}
+      </div>
+      <div class ="span4"></div>
+    </div>
 
      <div class = "row-fluid">
        <div class ="span4"></div>
        <div class ="span2">
          <div class="fieldWrapper">
            {{ form.subject.errors }}
-           <label for="dataset">Dataset</label>
+           <label for="ds_name">Dataset</label>
          </div>
        </div>
        <div class ="span2">
-         {{ form.dataset }}
+         {{ form.ds_name }}
        </div>
        <div class ="span4"></div>
      </div>
@@ -92,20 +82,6 @@ Create Project Template
            <div class ="span4"></div>
      </div>
      
-   <!--  <div class = "row-fluid">
-       <div class ="span4"></div>
-       <div class ="span2">
-         <div class="fieldWrapper">
-           {{ form.subject.errors }}
-           <label for="dataurl">Data URL</label>
-         </div>
-       </div>
-       <div class ="span2">
-         {{ form.dataurl }}
-       </div>
-       <div class ="span4"></div>
-     </div>-->
-
      <div class = "row-fluid">
        <div class ="span4"></div>
        <div class ="span2">
@@ -120,20 +96,6 @@ Create Project Template
        <div class ="span4"></div>
      </div>
 
-     <div class = "row-fluid">
-       <div class ="span4"></div>
-       <div class ="span2">
-         <div class="fieldWrapper">
-           {{ form.subject.errors }}
-           <label for="readonly">Read Only:</label>
-         </div>
-       </div>
-       <div class ="span2">
-         {{ form.readonly }}
-       </div>
-       <div class ="span4"></div>
-     </div>
-     
      <div class = "row-fluid">
        <div class ="span4"></div>
        <div class ="span2">
@@ -184,7 +146,8 @@ Create Project Template
         
       </div>
       <div class ="span4"></div>
-      
+    
+{% endfor %}  
  </form>
        
 {% endblock %}

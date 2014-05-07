@@ -1,15 +1,17 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.forms import ModelForm
-from models import projects
-from models import datasets
-from models import tokens
+from django.forms.models import inlineformset_factory
+from models import Project
+from models import Dataset
+from models import Token
 
 
 class CreateProjectForm(ModelForm):
-
+    ds_name = forms.ModelChoiceField(queryset = Dataset.objects.all())
     class Meta:
-        model = projects
+        model = Project
+        exclude = ['dataurl']
 
 
         def clean_project(self):
@@ -21,8 +23,10 @@ class CreateProjectForm(ModelForm):
 class CreateDatasetForm(ModelForm):
 
     class Meta:
-        model = datasets
+        model = Dataset
+        
 
+ProjectFormSet = inlineformset_factory(Dataset,Project,extra=1, form=CreateProjectForm)
              
 class UpdateProjectForm(forms.Form):
     currentToken = forms.CharField(label=(u' Current Token'), widget = forms.TextInput(attrs={'readonly':'readonly'}))

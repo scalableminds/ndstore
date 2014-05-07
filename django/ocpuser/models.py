@@ -3,8 +3,8 @@ from django.db.models.signals import post_save
 from django.contrib.auth.models import User
 
 # This model represent and creates an ocp dataset( database)
-class datasets ( models.Model):
-    dataset  =  models. CharField(max_length=200, unique=True,verbose_name="Name of the Image dataset")    
+class Dataset ( models.Model):
+    dataset_name  =  models. CharField(max_length=200, unique=True,verbose_name="Name of the Image dataset")    
     ximagesize =  models.IntegerField()
     yimagesize =  models.IntegerField()
     startslice = models.IntegerField()
@@ -25,24 +25,27 @@ class datasets ( models.Model):
         )
 
     def __unicode__(self):
-        return self.dataset
+        return self.dataset_name
 
 
 # This model represent and creates an ocp project( database)
 # It has a foreign key dependency on the datasets class
-class projects ( models.Model):
-    project  =  models. CharField(max_length=200, primary_key=True)
+class Project ( models.Model):
+    project_name  =  models. CharField(max_length=200, primary_key=True)
     project_description  =  models. CharField(max_length=4096, blank=True)
-    dataset  =  models.ForeignKey(datasets)
+    dataset  =  models.ForeignKey(Dataset)
 
     DATATYPE_CHOICES = (
-        (1, 'Image'),
-        (2, 'Annotation'),
-        (3, 'Channel 16 bit'),
-        (4, 'Channel 8 bit'),
+        (1, 'IMAGES'),
+        (2, 'ANNOTATIONS'),
+        (3, 'CHANNEL_16bit'),
+        (4, 'CHANNEL_8bit'),
+        (5, 'PROBMAP_32bit'),
+        (6, 'BITMASK'),
+        (7, 'ANNOTATIONS_64bit'),
         )
     datatype = models.IntegerField(choices=DATATYPE_CHOICES, default=1)
-    dataurl  =  models.CharField(max_length=200)
+    dataurl  =  "http://openconnecto.me/ocp"
     resolution = models.IntegerField(default=0)
     EXCEPTION_CHOICES = (
         (1, 'Yes'),
@@ -74,10 +77,10 @@ class projects ( models.Model):
         return self.project
 
 
-class tokens ( models.Model):
-    token  =  models. CharField(max_length=200, primary_key=True)
+class Token ( models.Model):
+    token_name  =  models. CharField(max_length=200, primary_key=True)
     token_description  =  models. CharField(max_length=4096,blank=True)
-    project  = models.ForeignKey(projects)
+    project  = models.ForeignKey(Project)
     READONLY_CHOICES = (
         (1, 'Yes'),
         (0, 'No'),
