@@ -8,17 +8,31 @@ from models import Token
 
 
 class CreateProjectForm(ModelForm):
-    ds_name = forms.ModelChoiceField(queryset = Dataset.objects.all())
+#    ds_name = forms.ModelChoiceField(queryset = Dataset.objects.all())
+   # ds_name1 = Dataset.objects.values_list('dataset_name', flat = True)
     class Meta:
         model = Project
         exclude = ['dataurl']
-
+        exclude = ['dataset']
 
         def clean_project(self):
             if 'project' in self.cleaned_data:
                 project = self.cleaned_data['project']
                 return project
             raise forms.ValidationError('Please enter a valid project')
+        
+class CreateTokenForm(ModelForm):
+#    ds_name = forms.ModelChoiceField(queryset = Dataset.objects.all())
+   # ds_name1 = Dataset.objects.values_list('dataset_name', flat = True)
+    class Meta:
+        model = Token
+        
+
+        def clean_token(self):
+            if 'token' in self.cleaned_data:
+                token = self.cleaned_data['token']
+                return token
+            raise forms.ValidationError('Please enter a valid token')
 
 class CreateDatasetForm(ModelForm):
 
@@ -27,6 +41,7 @@ class CreateDatasetForm(ModelForm):
         
 
 ProjectFormSet = inlineformset_factory(Dataset,Project,extra=1, form=CreateProjectForm)
+TokenFormSet = inlineformset_factory(Project,Token,extra=1, form=CreateTokenForm)
              
 class UpdateProjectForm(forms.Form):
     currentToken = forms.CharField(label=(u' Current Token'), widget = forms.TextInput(attrs={'readonly':'readonly'}))

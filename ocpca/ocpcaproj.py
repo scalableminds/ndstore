@@ -84,9 +84,10 @@ class OCPCAProject:
 class OCPCADataset:
   """Configuration for a dataset"""
 
-  def __init__ ( self, ximagesz, yimagesz, startslice, endslice, zoomlevels, zscale ):
+  def __init__ ( self, dataset_id, dataset_name, ximagesz, yimagesz, startslice, endslice, zoomlevels, zscale, dataset_description ):
     """Construct a db configuration from the dataset parameters""" 
-
+    self.dataset_id = dataset_id
+    self.dataset_name = dataset_name
     self.slicerange = [ startslice, endslice ]
 
     # istropic slice range is a function of resolution
@@ -210,11 +211,11 @@ class OCPCAProjectsDB:
   #
   # Create a new dataset
   #
-  def newDataset ( self, dsname, ximagesize, yimagesize, startslice, endslice, zoomlevels, zscale ):
+  def newDataset ( self, dsname, ximagesize, yimagesize, startslice, endslice, zoomlevels, zscale, description ):
     """Create a new ocpca dataset"""
 
-    sql = "INSERT INTO {0} (dataset, ximagesize, yimagesize, startslice, endslice, zoomlevels, zscale) VALUES (\'{1}\',\'{2}\',\'{3}\',\'{4}\',{5},\'{6}\',\'{7}\')".format (\
-       ocpcaprivate.datasets, dsname, ximagesize, yimagesize, startslice, endslice, zoomlevels, zscale )
+    sql = "INSERT INTO {0} (dataset_name, ximagesize, yimagesize, startslice, endslice, zoomlevels, zscale, dataset_description) VALUES (\'{1}\',\'{2}\',\'{3}\',\'{4}\',{5},\'{6}\',\'{7}\',\'{8}\')".format (\
+       ocpcaprivate.datasets, dsname, ximagesize, yimagesize, startslice, endslice, zoomlevels, zscale, description )
 
     logger.info ( "Creating new dataset. Name %s. SQL=%s" % ( dsname, sql ))
 
@@ -227,11 +228,17 @@ class OCPCAProjectsDB:
 
     self.conn.commit()
 
+    
+
+  def newOCPCAProj(self, project_name,project_description,dataset, datatype,resolution,exceptions,host,linkdb,openid):
+    datasetcfg = self.loadDatasetConfig ( dataset )
 
   #
   # Create a new project (annotation or data)
   #
-  def newOCPCAProj ( self, token, openid, dbhost, project, dbtype, dataset, dataurl, readonly, exceptions, nocreate, resolution ):
+  # test proj
+    
+  def newOCPCAProjOld ( self, token, openid, dbhost, project, dbtype, dataset, dataurl, readonly, exceptions, nocreate, resolution ):
     """Create a new ocpca project"""
 
 # TODO need to undo the project creation if not totally sucessful
@@ -394,7 +401,7 @@ class OCPCAProjectsDB:
 
   def loadDatasetConfig ( self, dataset ):
     """Query the database for the dataset information and build a db configuration"""
-    sql = "SELECT ximagesize, yimagesize, startslice, endslice, zoomlevels, zscale from %s where dataset = \'%s\'" % (ocpcaprivate.datasets, dataset)
+    sql = "SELECT id, ximagesize, yimagesize, startslice, endslice, zoomlevels, zscale, dataset_description from %s where dataset_name = \'%s\'" % (ocpcaprivate.datasets, dataset)
 
     try:
       cursor = self.conn.cursor()
@@ -412,8 +419,8 @@ class OCPCAProjectsDB:
       logger.warning ( "Dataset %s not found." % ( dataset ))
       raise OCPCAError ( "Dataset %s not found." % ( dataset ))
 
-    [ ximagesz, yimagesz, startslice, endslice, zoomlevels, zscale ] = row
-    return OCPCADataset ( int(ximagesz), int(yimagesz), int(startslice), int(endslice), int(zoomlevels), float(zscale) ) 
+    [ dataset_id, ximagesz, yimagesz, startslice, endslice, zoomlevels, zscale, dataset_description ] = row
+    return OCPCADataset ( dataset_id, dataset, int(ximagesz), int(yimagesz), int(startslice), int(endslice), int(zoomlevels), float(zscale) , dataset_description) 
 
 
   #

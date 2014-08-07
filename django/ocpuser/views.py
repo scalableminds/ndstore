@@ -25,6 +25,8 @@ from models import Token
 
 from forms import CreateProjectForm
 from forms import ProjectFormSet
+from forms import TokenFormSet
+from forms import CreateTokenForm
 from forms import CreateDatasetForm
 from forms import UpdateProjectForm
 
@@ -141,15 +143,28 @@ def profile(request):
     else:
     # GET Option
       #import pdb;pdb.set_trace()
-      pd = ocpcaproj.OCPCAProjectsDB()
+
+      #pd = ocpcaproj.OCPCAProjectsDB()
       openid = request.user.username
-      databases = pd.getDatabases ( openid)
+#      import pdb;pdb.set_trace()
+      all_datasets = Dataset.objects.all()
       dbs = defaultdict(list)
-      for db in databases:
-        proj = pd.getFilteredProjs(openid,"","",db[0]);
-        dbs[db].append(proj)
+      for db in all_datasets:
+        proj = Project.objects.filter(dataset_id=db.id)
+        dbs[db.dataset_name].append(proj)
+      
+      for k,v in dbs.iteritems():
+        print k,type(v)
+        for i in v:
+          for p in i:
+            print p.host
         
-      return render_to_response('profile.html', { 'databases': dbs.iteritems() },context_instance=RequestContext(request))
+      #    for i in item:
+     #       print i
+      all_projects = Project.objects.values_list('project_name',flat= True)
+      
+      #      return render_to_response('profile.html', { 'dts': all_projects },context_instance=RequestContext(request))  
+      return render_to_response('profile.html', { 'databases': dbs.iteritems(),'projects':all_projects },context_instance=RequestContext(request))
     
   except OCPCAError, e:
     #import pdb;pdb.set_trace();
@@ -236,54 +251,93 @@ def tokens(request):
 
 @login_required(login_url='/ocp/accounts/login/')
 def createproject(request):
-
-  if request.method == 'POST':
-    if 'CreateProject' in request.POST:
-      form = CreateProjectForm(request.POST)
-   
-      if form.is_valid():
-                
-        formset = ProjectFormSet(request.POST, instance=form.cleaned_data['dataset'])
-        if formset.is_valid():
-          formset.save()
   
-        nocreateoption = request.POST.get('nocreate')
-        if nocreateoption =="on":
-          nocreate = 1
+  if request.method == 'POST':
+    proj_name=""
+    
+    if 'CreateProject' in request.POST:
+      
+      proj= request.POST.get('proj_name').strip()
+      if (proj =="none"):
+        #create a new project
+        ds= request.POST.get('ds_name').strip()
+        dataset_instance = Dataset.objects.get(dataset_name=ds)
+        pformset = ProjectFormSet(request.POST, instance=dataset_instance)
+        if pformset.is_valid():
+          print pformset.data
+          project_instance = pformset.save()
+          for form in pformset:
+            cd =form.cleaned_data
+            proj_name = cd.get('project_name')
+          print proj_name
+          project_instance = Project.objects.get(project_name=proj_name)
+          tformset = TokenFormSet(request.POST, instance=project_instance)
+          if tformset.is_valid():
+            tformset.save()
+          else:
+            return HttpResponse('<h1>New Token form  data is inavalid</h1>')
         else:
-          nocreate = 0
+          return HttpResponse('<h1>New Project form data is inavalid</h1>')
+        # Create database on host
+        pd = ocpcaproj.OCPCAProjectsDB()
         
-        print "Creating a project with:"
-        print  project, dataset, dataurl, exceptions, openid , resolution
-        # Get database info                
-        try:
-          pd = ocpcaproj.OCPCAProjectsDB()
-          pd.newOCPCAProj ( token, openid, host, project, datatype, dataset, dataurl, readonly, exceptions , nocreate, int(resolution) )
-          #pd.insertTokenDescription ( token, description )
-          return redirect(profile)          
-        except OCPCAError, e:
-          messages.error(request, e.value)
-          return redirect(profile)          
       else:
-        #Invalid Form
-        context = {'form': form}
-        print form.errors
-        return render_to_response('createproject.html',context,context_instance=RequestContext(request))
-    else:
-      #default
-      return redirect(profile)
+        #Link to existing project
+        project_instance = Project.objects.get(project_name=proj)
+        tformset = TokenFormSet(request.POST, instance=project_instance)
+
+        if tformset.is_valid():
+          tformset.save()
+        else:
+          return HttpResponse('<h1>New Token form data is inavalid</h1>')
+      
+      return redirect(profile)          
+      #          nocreateoption = request.POST.get('nocreate')
+      #          if nocreateoption =="on":
+      #            nocreate = 1
+      #          else:
+      #            nocreate = 0
+      #          return redirect(profile)
+      
+     
+    # print "Creating a project with:"
+    # print  project, dataset, dataurl, exceptions, openid , resolution
+    # # Get database info                
+    # try:
+    #   pd = ocpcaproj.OCPCAProjectsDB()
+    #   pd.newOCPCAProj ( token, openid, host, project, datatype, dataset, dataurl, readonly, exceptions , nocreate, int(resolution) )
+    #pd.insertTokenDescription ( token, description )
+    #return redirect(profile)
+    
+    #   except OCPCAError, e:
+    #    messages.error(request, e.value)
+    #   
+    #    else:
+    #      #Invalid Form
+    #      context = {'form': form}
+    #      print form.errors
+    #      return render_to_response('createproject.html',context,context_instance=RequestContext(request))
+    #    else:
+    #    #default
+    
   else:
     '''Show the Create projects form'''
     #randtoken = ''.join(random.choice(string.ascii_uppercase + string.digits + string.ascii_lowercase) for x in range(64))
     #form = CreateProjectForm(initial={'token': randtoken})
     #PYTODO - This should show both the create token form and create project form.
     # I am starting with create project which has a foreign key dependency on datasets.
+    
     dataset_form = CreateDatasetForm()
     dataset = Dataset()
-    formset = ProjectFormSet(instance=dataset)
-    context = {'formset': formset}
+    proj_formset = ProjectFormSet(instance=dataset)
+    project_instance = Project()
+    token_formset = TokenFormSet(instance= project_instance)
+    #get the names of all the datsets in the database
+    ds_list = Dataset.objects.values_list('dataset_name', flat = True)
+    all_projects = Project.objects.values_list('project_name',flat= True)
+    context = {'formset': proj_formset, 'tformset':token_formset, 'ds_list': ds_list,'proj_list':all_projects}
     return render_to_response('createproject.html',context,context_instance=RequestContext(request))
-      
+  
 
 @login_required(login_url='/ocp/accounts/login/')
 def updateproject(request):

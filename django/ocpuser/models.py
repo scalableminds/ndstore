@@ -31,7 +31,7 @@ class Dataset ( models.Model):
 # This model represent and creates an ocp project( database)
 # It has a foreign key dependency on the datasets class
 class Project ( models.Model):
-    project_name  =  models. CharField(max_length=200, primary_key=True)
+    project_name  =  models. CharField(max_length=200, unique=True)
     project_description  =  models. CharField(max_length=4096, blank=True)
     dataset  =  models.ForeignKey(Dataset)
 
@@ -74,11 +74,11 @@ class Project ( models.Model):
         # Required to override the default table name
         db_table = u"projects"
     def __unicode__(self):
-        return self.project
+        return self.project_name
 
 
 class Token ( models.Model):
-    token_name  =  models. CharField(max_length=200, primary_key=True)
+    token_name  =  models. CharField(max_length=200, unique=True)
     token_description  =  models. CharField(max_length=4096,blank=True)
     project  = models.ForeignKey(Project)
     READONLY_CHOICES = (

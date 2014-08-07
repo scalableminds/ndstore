@@ -58,45 +58,58 @@
       	<div class ="span1"></div>
 	<div class ="span10">
 	  <table class ="table">
-	    {% for key, value in databases %}
+	    {% for dataset, dts_projects in databases %}
 	    
 	    <thead>
-	      <tr class="success"><th>Dataset</th> <th>{{key.0}}</th></tr>
+	      <tr class="success"><th>Dataset</th> <th>{{dataset}}</th></tr>
 	    </thead>
 	    <tr>
 	      <td></td>
 	      <td>
 		<table class="table table-bordered">
-		  {% for proj in value %}
+		  {% for value in dts_projects %}
 		  <tr class ="error">
 		    <th>Project</th>
-		    <th>Type</th>
+		    <th>Datatype</th>
 		    <th>Description</th>
+		    <th>Resolution</th>
+		    <th>Exceptions</th>
+		    <th>Host</th>
 		  </tr>	   
 		  
-		  {% for field in proj %}
+		  
+		  {% for proj in value %}
+		  		  
 		  <form method="post" action = "">
 		    <tr>
-		      <input type="hidden" name="projname" value={{field.3}}>
-		      <td style="width: 15%;">{{ field.3 }}</td>
-		      {% if field.4 == 1 %}
+		      <input type="hidden" name="projname" value={{proj.project_name}}>
+		      <td style="width: 15%;">{{ proj.project_name }}</td>
+		      {% if proj.datatype == 1 %}
 		      <td>IMAGE</td>
-		      {% elif field.4 == 2%}
+		      {% elif proj.datatype == 2%}
 		      <td>ANNOTATION</td>
-		      {% elif field.4 == 3%}
+		      {% elif proj.datatype == 3%}
 		      <td>CHANNEL 8bit</td>
-		      {% elif field.4 == 4%}
+		      {% elif proj.datatype == 4%}
 		      <td>CHANNEL 16bit</td>
-		      {% elif field.4 == 5%}
+		      {% elif proj.datatype == 5%}
                       <td>PROBMAP 32bit</td>
-		      {% elif field.4 == 6%}
+		      {% elif proj.datatype == 6%}
                       <td>BITMASK</td>
-		      {% elif field.4 == 7%}
+		      {% elif proj.datatype == 7%}
                       <td>ANNOTATION 64bit</td>
 		      {% else %}
 		      <td>OTHER</td>
 		      {% endif %}
-		      <td colspan=50>{{ field.11 }}</td>
+		      <td>{{ proj.project_description }}</td>
+		      <td>{{ proj.resolution }}</td>
+		      {% if proj.exceptions == 0%}
+                      <td>NO</td>
+		      {% else %}
+		      <td>YES</td>
+		      {% endif %}
+		      <td>{{ proj.host }}</td>
+		     
 <!--		      <td><button class="btn" id="delete" type="submit" name="delete"> <i class ="icon-trash icon-black"></i>Delete Project</button></td>
 -->
 		      <td><button class="btn" id="backup" type="submit" name="backup"> <i class ="icon-inbox icon-black"></i>Backup Project</button></td>
@@ -104,6 +117,7 @@
 		  </form>	  
 		  {% endfor %}         
 		  
+
 		  {% empty %}
 		  <li>No Projects Available!</li>
 		  {% endfor %}         
