@@ -19,6 +19,8 @@ def main():
   parser.add_argument('yimagesize', type=int, action="store")
   parser.add_argument('startslice', type=int, action="store")
   parser.add_argument('endslice', type=int, action="store")
+  parser.add_argument('startwindow', type=int, action="store")
+  parser.add_argument('endwindow', type=int, action="store")
   parser.add_argument('zoomlevels', type=int, action="store")
   parser.add_argument('zscale', type=float, action="store", help='Relative resolution between x,y and z')
   parser.add_argument('description', action="store", help='Description of the dataset')
@@ -27,10 +29,10 @@ def main():
   # Get database info
   pd = ocpcaproj.OCPCAProjectsDB()
 
-  pd.newDataset ( result.dsname, result.ximagesize, result.yimagesize, result.startslice, result.endslice, result.zoomlevels, result.zscale, result.description
+  pd.newOCPCADataset ( result.dsname, result.ximagesize, result.yimagesize, result.startslice, result.endslice, result.startwindow, result.endwindow, result.zoomlevels, result.zscale, result.description
                   )
   ds = pd.loadDatasetConfig(result.dsname)
-  print ds.dataset_name + "created successfully"
+  print ds.dataset_name + " created successfully"
   
 
 if __name__ == "__main__":

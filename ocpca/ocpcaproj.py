@@ -17,6 +17,9 @@ CHANNELS_8bit = 4
 PROBMAP_32bit = 5
 BITMASK = 6
 ANNOTATIONS_64bit = 7 
+IMAGES_16bit = 8
+RGB_32bit = 9
+RGB_64bit = 10
 
 class OCPCAProject:
   """Project specific for cutout and annotation data"""
@@ -211,11 +214,11 @@ class OCPCAProjectsDB:
   #
   # Create a new dataset
   #
-  def newDataset ( self, dsname, ximagesize, yimagesize, startslice, endslice, zoomlevels, zscale, description ):
+  def newOCPCADataset ( self, dsname, ximagesize, yimagesize, startslice, endslice, startwindow, endwindow, zoomlevels, zscale, description ):
     """Create a new ocpca dataset"""
 
-    sql = "INSERT INTO {0} (dataset_name, ximagesize, yimagesize, startslice, endslice, zoomlevels, zscale, dataset_description) VALUES (\'{1}\',\'{2}\',\'{3}\',\'{4}\',{5},\'{6}\',\'{7}\',\'{8}\')".format (\
-       ocpcaprivate.datasets, dsname, ximagesize, yimagesize, startslice, endslice, zoomlevels, zscale, description )
+    sql = "INSERT INTO {0} (dataset_name, ximagesize, yimagesize, startslice, endslice, startwindow, endwindow, zoomlevels, zscale, dataset_description) VALUES (\'{1}\',\'{2}\',\'{3}\',\'{4}\',{5},\'{6}\',\'{7}\',\'{8}\',\'{9}\',\'{10}\' )".format (\
+       ocpcaprivate.datasets, dsname, ximagesize, yimagesize, startslice, endslice, startwindow, endwindow, zoomlevels, zscale, description )
 
     logger.info ( "Creating new dataset. Name %s. SQL=%s" % ( dsname, sql ))
 
@@ -229,26 +232,17 @@ class OCPCAProjectsDB:
     self.conn.commit()
 
     
-
-  def newOCPCAProj(self, project_name,project_description,dataset, datatype,resolution,exceptions,host,linkdb,openid):
+  #Create a new project and database
+  def newOCPCAProj(self, project_name,project_description,user_id,dataset,datatype,resolution,exceptions,host,readonly,propogate,linkdb):
+    import pdb;pdb.set_trace()
     datasetcfg = self.loadDatasetConfig ( dataset )
+    print datasetcfg.dataset_id
 
-  #
-  # Create a new project (annotation or data)
-  #
-  # test proj
-    
-  def newOCPCAProjOld ( self, token, openid, dbhost, project, dbtype, dataset, dataurl, readonly, exceptions, nocreate, resolution ):
-    """Create a new ocpca project"""
+    sql = "INSERT INTO {0} (project_name, project_description, user_id, dataset_id, datatype, resolution,exceptions,host,readonly,propogate) VALUES (\'{1}\',\'{2}\',\'{3}\',\'{4}\',{5},\'{6}\',\'{7}\',\'{8}\',\'{9}\',\'{10}\')".format (\
+       ocpcaprivate.projects, project_name,project_description,user_id,datasetcfg.dataset_id,int(datatype),int(resolution), int(exceptions),host, int(readonly),int(propogate))
 
-# TODO need to undo the project creation if not totally sucessful
-    datasetcfg = self.loadDatasetConfig ( dataset )
-
-    sql = "INSERT INTO {0} (token, openid, host, project, datatype, dataset, dataurl, readonly, exceptions, resolution) VALUES (\'{1}\',\'{2}\',\'{3}\',\'{4}\',{5},\'{6}\',\'{7}\',\'{8}\',\'{9}\',\'{10}\')".format (\
-       ocpcaprivate.projects, token, openid, dbhost, project, dbtype, dataset, dataurl, int(readonly), int(exceptions), resolution )
-
-    logger.info ( "Creating new project. Host %s. Project %s. SQL=%s" % ( dbhost, project, sql ))
-
+    logger.info ( "Creating new project. Host %s. Project %s. SQL=%s" % ( host, project_name, sql ))
+    print sql
     try:
       cursor = self.conn.cursor()
       cursor.execute ( sql )
@@ -257,15 +251,19 @@ class OCPCAProjectsDB:
       raise OCPCAError ("Could not query ocpca projects database %d: %s. sql=%s" % (e.args[0], e.args[1], sql))
 
     self.conn.commit()
-
+    # create database
+    self.newOCPCADatabase(project_name,dataset,datatype,exceptions,host,linkdb)
+    
+    #Create a new database
+  def newOCPCADatabase(self,project_name,dataset,datatype,exceptions,host,linkdb):
     # Exception block around database creation
     try:
-
+      datasetcfg = self.loadDatasetConfig ( dataset )
       # Make the database unless specified
-      if not nocreate: 
+      if not linkdb: 
        
         # Connect to the new database
-        newconn = MySQLdb.connect (host = dbhost,
+        newconn = MySQLdb.connect (host = host,
                               user = ocpcaprivate.dbuser,
                               passwd = ocpcaprivate.dbpasswd )
 
@@ -273,7 +271,7 @@ class OCPCAProjectsDB:
       
 
         # Make the database and associated ocpca tables
-        sql = "CREATE DATABASE %s;" % project
+        sql = "CREATE DATABASE %s;" % project_name
        
         try:
           newcursor.execute ( sql )
@@ -284,29 +282,29 @@ class OCPCAProjectsDB:
         newconn.commit()
 
         # Connect to the new database
-        newconn = MySQLdb.connect (host = dbhost,
+        newconn = MySQLdb.connect (host = host,
                               user = ocpcaprivate.dbuser,
                               passwd = ocpcaprivate.dbpasswd,
-                              db = project )
+                              db = project_name )
 
         newcursor = newconn.cursor()
 
         sql = ""
 
         # tables for annotations and images
-        if dbtype==IMAGES_8bit or dbtype==ANNOTATIONS or dbtype==PROBMAP_32bit or dbtype==BITMASK:
+        if datatype==IMAGES_8bit or datatype==ANNOTATIONS or datatype==PROBMAP_32bit or datatype==BITMASK:
 
           for i in datasetcfg.resolutions: 
             sql += "CREATE TABLE res%s ( zindex BIGINT PRIMARY KEY, cube LONGBLOB );\n" % i
 
         # tables for channel dbs
-        if dbtype == CHANNELS_8bit or dbtype == CHANNELS_16bit:
+        if datatype == CHANNELS_8bit or datatype == CHANNELS_16bit:
           sql += 'CREATE TABLE channels ( chanstr VARCHAR(255), chanid INT, PRIMARY KEY(chanstr));\n'
           for i in datasetcfg.resolutions: 
             sql += "CREATE TABLE res%s ( channel INT, zindex BIGINT, cube LONGBLOB, PRIMARY KEY(channel,zindex) );\n" % i
 
         # tables specific to annotation projects
-        if dbtype == ANNOTATIONS or dbtype ==ANNOTATIONS_64bit:
+        if datatype == ANNOTATIONS or datatype ==ANNOTATIONS_64bit:
 
           sql += "CREATE TABLE ids ( id BIGINT PRIMARY KEY);\n"
 
@@ -332,9 +330,9 @@ class OCPCAProjectsDB:
 
     # Error, undo the projects table entry
     except:
-      sql = "DELETE FROM {0} WHERE token=\'{1}\'".format (ocpcaprivate.projects, token)
+      sql = "DELETE FROM {0} WHERE project_name=\'{1}\'".format (ocpcaprivate.projects, project_name)
 
-      logger.info ( "Could not create project database.  Undoing projects insert. Project %s. SQL=%s" % ( project, sql ))
+      logger.info ( "Could not create project database.  Undoing projects insert. Project %s. SQL=%s" % ( project_name, sql ))
 
       try:
         cursor = self.conn.cursor()

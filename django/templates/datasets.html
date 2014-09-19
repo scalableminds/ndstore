@@ -68,7 +68,9 @@
 		  <th>Y Image Size</th>
 		  <th>Start Slice</th>
 		  <th>End Slice</th>
-		  <th>Zoom Levels</th>
+		  <th>Start Window</th>
+		  <th>End Window</th>
+		  <th>Zoom levels</th>
 		  <th>Z Scale</th>
 		</tr>	   
 		<form method="post" action = "">
@@ -78,6 +80,8 @@
                     <td>{{ ds.yimagesize }}</td>
 		    <td>{{ ds.startslice }}</td>
 		    <td>{{ ds.endslice }}</td>
+		    <td>{{ ds.startwindow }}</td>
+		    <td>{{ ds.endwindow }}</td>
 		    <td>{{ ds.zoomlevels }}</td>
 		    <td>{{ ds.zscale }}</td>
                     <td><button class="btn" id="delete" type="submit" name="delete" onclick="return confirm('Are you sure you want to delete?')"> <i class ="icon-trash icon-black"></i>Delete Dataset</button></td>

@@ -9,6 +9,8 @@ class Dataset ( models.Model):
     yimagesize =  models.IntegerField()
     startslice = models.IntegerField()
     endslice = models.IntegerField()
+    startwindow = models.IntegerField(default = 0)
+    endwindow = models.IntegerField(default = 0)
     zoomlevels = models.IntegerField()
     zscale = models.FloatField()
     dataset_description  =  models. CharField(max_length=4096)
@@ -33,8 +35,9 @@ class Dataset ( models.Model):
 class Project ( models.Model):
     project_name  =  models. CharField(max_length=200, unique=True)
     project_description  =  models. CharField(max_length=4096, blank=True)
+    user = models.ForeignKey(User, editable = False)
     dataset  =  models.ForeignKey(Dataset)
-
+    
     DATATYPE_CHOICES = (
         (1, 'IMAGES'),
         (2, 'ANNOTATIONS'),
@@ -43,9 +46,13 @@ class Project ( models.Model):
         (5, 'PROBMAP_32bit'),
         (6, 'BITMASK'),
         (7, 'ANNOTATIONS_64bit'),
+        (8, 'IMAGE_16bit'),
+        (9, 'RGB_32bit'),
+        (10, 'RGB_64bit'),
+        
         )
     datatype = models.IntegerField(choices=DATATYPE_CHOICES, default=1)
-    dataurl  =  "http://openconnecto.me/ocp"
+    dataurl  =  models. CharField(max_length=4096, blank=True)
     resolution = models.IntegerField(default=0)
     EXCEPTION_CHOICES = (
         (1, 'Yes'),
@@ -63,11 +70,16 @@ class Project ( models.Model):
         ('dsp063.pha.jhu.edu', 'Datascope 063'),
         )
     host =  models.CharField(max_length=200, choices=HOST_CHOICES, default='localhost')
-#    NOCREATE_CHOICES = (
- #       (0, 'No'),
- #       (1, 'Yes'),
- #       )
- #   nocreate =  models.IntegerField(choices=NOCREATE_CHOICES, default=0)
+    READONLY_CHOICES = (
+        (0,'No'),
+        (1,'Yes'),
+        )
+    readonly =  models.IntegerField(choices=READONLY_CHOICES, default=0)
+    PROPOGATE_CHOICES = (
+        (0,'No'),
+        (1,'Yes'),
+        )
+    propogate =  models.IntegerField(choices=READONLY_CHOICES, default=0)
 
     class Meta:
         """ Meta """

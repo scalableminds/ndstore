@@ -15,5 +15,7 @@ urlpatterns = patterns('ocpuser.views',
                        url(r'^createdataset/$', 'createdataset'),
                        url(r'^updatedataset/$', 'updatedataset'),
                        url(r'^restore/$', 'restore'),
+                       url(r'^download/$', 'download'),
+                       
    
 )
