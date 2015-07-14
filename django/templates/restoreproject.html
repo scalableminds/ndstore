@@ -5,7 +5,7 @@ Create Project Template
 
 {% block title %}
 
-        Create New Project 
+        Restore Project
 
 {% endblock title%}
 {% block content %}
@@ -18,10 +18,10 @@ Create Project Template
 	        </div>
 	  </div>
 
-	  
+
    <form method="post" action="" enctype="multipart/form-data">
-     {% csrf_token %}  
-     
+     {% csrf_token %}
+
      {{ form.non_field_errors }}
 
      <div class = "row">
@@ -37,7 +37,7 @@ Create Project Template
        </div>
        <div class ="col-md-4"></div>
      </div>
-     
+
 
      <div class = "row">
        <div class ="col-md-4"></div>
@@ -52,8 +52,8 @@ Create Project Template
        </div>
        <div class ="col-md-4"></div>
      </div>
-     
-     
+
+
       <div class = "row">
        <div class ="col-md-4"></div>
        <div class ="col-md-2">
@@ -152,7 +152,7 @@ Create Project Template
        <div class ="col-md-4"></div>
      </div>
 
-	
+
       <div class = "row">
        <div class ="col-md-4"></div>
        <div class ="col-md-2">
@@ -200,10 +200,10 @@ Create Project Template
      <div class = "row-fluid">
          <div class ="span4"></div>
          <div class ="span4">
-	   
+
 	   <div id="filtermenu"style="background-color:#F5F6CE; height:40px;width:800px;float:left;">
              Select backup file:
-	     
+
              <select name="backupfile">
                <option value="None">None</option>
                {% for file in flist %}
@@ -219,7 +219,7 @@ Create Project Template
        <div class = "row-fluid">
 	 <div class ="span5"></div>
 	 <div class ="span3">
-	   
+
 	   <p><button class="btn btn-primary" name = "RestoreProject" type="submit">Restore Project</button></p>
 	 </div>
 	 <div class ="span4"></div>
