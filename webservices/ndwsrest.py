@@ -138,6 +138,41 @@ def numpyZip ( chanargs, proj, db ):
   except Exception,e:
     raise NDWSError("{}".format(e))
 
+def RAW ( chanargs, proj, db ):
+  """Return a web readable raw binary representation (knossos format)"""
+
+  try:
+    # argument of format channel/service/imageargs
+    m = re.match("([\w+,]+)/(\w+)/([\w+,/-]+)$", chanargs)
+    [channels, service, imageargs] = [i for i in m.groups()]
+  except Exception, e:
+    logger.error("Arguments not in the correct format {}. {}".format(chanargs, e))
+    raise NDWSError("Arguments not in the correct format {}. {}".format(chanargs, e))
+
+  try: 
+    channel_list = channels.split(',')
+    ch = proj.getChannelObj(channel_list[0])
+
+    channel_data = cutout( imageargs, ch, proj, db ).data
+    cubedata = np.zeros ( (len(channel_list),)+channel_data.shape, dtype=channel_data.dtype )
+    cubedata[0,:] = channel_data
+
+    # if one channel convert 3-d to 4-d array
+    for idx,channel_name in enumerate(channel_list[1:]):
+      if channel_name == '0':
+        continue
+      else:
+        ch = proj.getChannelObj(channel_name)
+        if ND_dtypetonp[ch.getDataType()] == cubedata.dtype:
+          cubedata[idx+1,:] = cutout(imageargs, ch, proj, db).data
+        else:
+          raise NDWSError("The npz cutout can only contain cutouts of one single Channel Type.")
+
+    binary_representation = cubedata.astype('uint8').tobytes()
+    return binary_representation
+
+  except Exception,e:
+    raise NDWSError("{}".format(e))
 
 def JPEG ( chanargs, proj, db ):
   """Return a web readable JPEG File"""
@@ -700,6 +735,8 @@ def selectService ( service, webargs, proj, db ):
     return  numpyZip ( webargs, proj, db ) 
   elif service in ['blosc']:
     return  BLOSC ( webargs, proj, db ) 
+  elif service in ['raw']:
+    return  RAW ( webargs, proj, db )
   elif service in ['jpeg']:
     return JPEG ( webargs, proj, db )
   elif service in ['zip']:
