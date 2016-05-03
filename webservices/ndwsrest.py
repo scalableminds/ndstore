@@ -168,7 +168,8 @@ def RAW ( chanargs, proj, db ):
         else:
           raise NDWSError("The npz cutout can only contain cutouts of one single Channel Type.")
 
-    binary_representation = cubedata.astype('uint8').tobytes()
+    binary_representation = cubedata.tobytes("C")
+
     return binary_representation
 
   except Exception,e:
